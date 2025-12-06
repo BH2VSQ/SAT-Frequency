@@ -135,8 +135,8 @@
                 "type": "Linear",
                 "uplinkBase": 145.965,
                 "downlinkBase": 435.640,
-                "uplinkMode": "USB",
-                "downlinkMode": "LSB",
+                "uplinkMode": "LSB",
+                "downlinkMode": "USB",
                 "isInverting": true,
                 "bandwidth": 60
             }
