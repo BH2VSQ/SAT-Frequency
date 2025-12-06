@@ -77,6 +77,13 @@
         <header class="flex justify-between items-center mb-8 pb-4 border-b border-slate-300 dark:border-slate-700">
             <h1 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100">卫星 JSON 数据编辑器</h1>
             <div class="flex space-x-4">
+                <!-- 新增：添加卫星按钮 -->
+                <button id="addSatelliteButton" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block -mt-0.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 3h.01m-6.938 4.673a8.956 8.956 0 01-2.458-.87C3.155 18.067 2.2 16.208 2.2 14c0-4.418 3.582-8 8-8s8 3.582 8 8c0 2.208-.955 4.067-2.438 5.798l-.707.707M12 21a9 9 0 005.673-2.071l.707-.707" />
+                    </svg>
+                    添加卫星
+                </button>
                 <button id="exportJsonButton" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 shadow-md transition duration-200" disabled>
                     导出 JSON 文件
                 </button>
@@ -131,6 +138,14 @@
         let editingSatelliteId = null;
 
         // --- 2. 核心功能函数 ---
+
+        /**
+         * 生成一个简单的唯一ID
+         */
+        function generateUniqueId() {
+            // 使用时间戳和随机数生成一个相对唯一的ID
+            return 'sat-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+        }
 
         /**
          * 异步加载 sat.json 文件
@@ -281,6 +296,9 @@
                     closeModal();
                     renderSatTiles(); // 重新渲染磁贴列表
                 } else {
+                    // 如果是新添加的卫星，但用户在编辑时更改了 ID，会走到这里，
+                    // 不过因为我们是在 addSatellite 中设置 ID 并用它打开 modal，理论上 ID 不应该丢失。
+                    // 这里的逻辑主要应对编辑模式。
                     throw new Error("保存失败：在数据集中找不到匹配的卫星ID。");
                 }
             } catch (e) {
@@ -314,6 +332,38 @@
         }
 
         /**
+         * 添加一颗新卫星
+         */
+        function addSatellite() {
+            const newId = generateUniqueId();
+            const defaultNewSatellite = {
+                id: newId,
+                name: "新卫星 (待编辑)",
+                noradId: "00000",
+                orbitType: "GEO", // 默认 GEO，可修改为 LEO, MEO 等
+                notes: "请在此处填写卫星的基本信息和功能描述。",
+                transponders: [
+                    // 可以提供一个默认的转发器示例
+                    {
+                        "frequency": "11000",
+                        "polarization": "H",
+                        "bandwidth": "36MHz",
+                        "service": "测试信号"
+                    }
+                ]
+            };
+            
+            // 将新卫星添加到数组开头，方便用户立即看到并编辑
+            SAT_DATA.unshift(defaultNewSatellite);
+            
+            // 重新渲染列表
+            renderSatTiles(); 
+            
+            // 打开编辑模态框让用户编辑新创建的卫星
+            openEditModal(newId);
+        }
+
+        /**
          * 绑定事件监听器
          */
         function setupEventListeners() {
@@ -324,6 +374,9 @@
             
             // JSON 导出按钮
             document.getElementById('exportJsonButton').addEventListener('click', exportJson);
+
+            // 新增：添加卫星按钮事件
+            document.getElementById('addSatelliteButton').addEventListener('click', addSatellite);
         }
 
         // --- 3. 通用 UI 逻辑 (深色模式) ---
