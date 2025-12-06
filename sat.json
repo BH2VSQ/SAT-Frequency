@@ -1,0 +1,177 @@
+[
+  {
+        "id": "ARISS",
+        "name": "ISS",
+        "noradId": 25544,
+        "notes": "V上U下",
+        "orbitType": "LEO",
+        "transponders": [
+            {
+                "id": "fm-v-u",
+                "name": "V/U FM 语音",
+                "type": "FM",
+                "uplink": 145.990,
+                "downlink": 437.800
+            },
+          {
+                "id": "fm-aprs",
+                "name": "V/V APRS",
+                "type": "FM",
+                "uplink": 145.825,
+                "downlink": 145.825
+            },
+          {
+                "id": "fm-SSTV",
+                "name": "V/V SSTV",
+                "type": "FM",
+                "downlink": 145.8
+            }
+        ]
+    },  
+  {
+        "id": "SO-50",
+        "name": "SO-50 (SAUDISAT-1C)",
+        "noradId": 27607,
+        "notes": "需要亚音74.4激活开机",
+        "orbitType": "LEO",
+        "transponders": [
+            {
+                "id": "fm-v-u",
+                "name": "V/U FM 语音",
+                "type": "FM",
+                "uplink": 145.850,
+                "downlink": 436.795,
+                "tone": 67
+            }
+        ]
+    },
+    {
+        "id": "PO-101",
+        "name": "PO-101 (Diwata-2B)",
+        "noradId": 43678,
+        "notes": "U上V下",
+        "orbitType": "LEO",
+        "transponders": [
+            {
+                "id": "fm-v-u",
+                "name": "V/U FM 语音",
+                "type": "FM",
+                "uplink": 437.5,
+                "downlink": 145.9,
+                "tone": 141.3
+            }
+        ]
+    },
+  {
+        "id": "AO-123",
+        "name": "AO-123 (ASRTU-1)",
+        "noradId": 61781,
+        "notes": "转发器失效，遥测正常",
+        "orbitType": "LEO",
+        "transponders": [
+            {
+                "id": "fm-voice",
+                "name": "V/U FM 语音",
+                "type": "FM",
+                "uplink": 145.850,
+                "downlink": 435.400,
+                "tone": 67.0
+            },
+          {
+                "id": "tele-TELE",
+                "name": "遥测BPSK",
+                "downlinkmode": "BPSK",
+                "downlink": 435.400
+            },
+          {
+                "id": "tele-SSDV",
+                "name": "SSDV图像",
+                "downlinkmode": "BPSK",
+                "downlink": 436.210
+            }
+        ]
+    },
+    {
+        "id": "SO-124",
+        "name": "SO-124 (Hades-R)",
+        "noradId": 62690,
+        "notes": "无亚音",
+        "orbitType": "LEO",
+        "transponders": [
+            {
+                "id": "fm-v-u",
+                "name": "V/U FM 语音",
+                "type": "FM",
+                "uplink": 145.925,
+                "downlink": 436.888
+            }
+        ]
+    },
+    {
+        "id": "SO-125",
+        "name": "SO-125 (Hades-ICM)",
+        "noradId": 63492,
+        "notes": "无亚音",
+        "orbitType": "LEO",
+        "transponders": [
+            {
+                "id": "fm-v-u",
+                "name": "V/U FM 语音",
+                "type": "FM",
+                "uplink": 145.875,
+                "downlink": 436.666
+            }
+        ]
+    },
+    {
+        "id": "RS-44",
+        "name": "RS-44 (DOAFF-8)",
+        "noradId": 44909,
+        "orbitType": "LEO",
+        "transponders": [
+            {
+                "id": "lin-v-u",
+                "name": "V/U 线性模式 (SSB/CW)",
+                "type": "Linear",
+                "uplinkBase": 145.965,
+                "downlinkBase": 435.640,
+                "uplinkMode": "USB",
+                "downlinkMode": "LSB",
+                "isInverting": true,
+                "bandwidth": 60
+            }
+        ]
+    },
+    {
+        "id": "QO-100",
+        "name": "QO-100 (Es'hail-2)",
+        "noradId": 44006,
+        "orbitType": "GEO",
+        "transponders": [
+            {
+                "id": "lin-geo-narrow",
+                "name": "GEO 窄带线性",
+                "type": "Linear",
+                "uplinkBase": 2400.175,
+                "downlinkBase": 10489.675,
+                "uplinkMode": "LSB",
+                "downlinkMode": "USB",
+                "isInverting": false,
+                "bandwidth": 250,
+                "notes": "多普勒效应可忽略不计。"
+            },
+            {
+                "id": "lin-geo-wide",
+                "name": "GEO 宽带Digi",
+                "type": "Linear",
+                "uplinkBase": 2405.5,
+                "downlinkBase": 10495,
+                "uplinkMode": "DATV",
+                "downlinkMode": "DATV",
+                "isInverting": false,
+                "bandwidth": 8000,
+                "notes": "用于数字电视传输。"
+            }
+        ]
+    }
+]
