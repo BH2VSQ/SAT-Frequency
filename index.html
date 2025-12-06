@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SatFreq Doppler - 静态版</title>
+    <!-- 使用 Tailwind CSS 进行样式设计 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自定义滑块样式 */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            margin-top: -6px;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #475569;
+            border-radius: 2px;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-20 selection:bg-blue-500 selection:text-white">
+
+    <!-- 头部 -->
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-10 shadow-lg">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <!-- Icon: Radio -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="text-blue-400 w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
+                <h1 class="text-xl font-bold tracking-tight">
+                    SatFreq <span class="text-blue-400">Doppler</span>
+                </h1>
+            </div>
+            <div class="flex gap-3">
+                <!-- 手动上传作为备用 -->
+                <label class="cursor-pointer bg-slate-700 hover:bg-slate-600 transition px-3 py-1.5 rounded-md text-sm flex items-center gap-2 border border-slate-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span class="hidden sm:inline">手动加载 JSON</span>
+                    <input type="file" id="fileInput" accept=".json" class="hidden" />
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        
+        <!-- 状态提示区 -->
+        <div id="statusMsg" class="hidden bg-yellow-500/20 text-yellow-200 px-4 py-3 rounded-lg text-sm border border-yellow-500/30"></div>
+
+        <!-- 卫星选择列表 -->
+        <section>
+            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">
+                选择卫星 / Select Satellite
+            </label>
+            <div id="satGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                <!-- 卫星按钮将通过 JS 插入这里 -->
+            </div>
+        </section>
+
+        <!-- 主内容区 -->
+        <div class="grid md:grid-cols-3 gap-6">
+            
+            <!-- 左侧：卫星详情 -->
+            <section class="md:col-span-1 bg-slate-800 rounded-xl p-5 border border-slate-700 h-fit" id="satDetails">
+                <!-- 详情将通过 JS 插入这里 -->
+            </section>
+
+            <!-- 右侧：多普勒表 -->
+            <section class="md:col-span-2 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-xl">
+                <div class="bg-slate-900/50 px-6 py-4 border-b border-slate-700 flex justify-between items-center">
+                    <h3 class="font-semibold text-slate-200 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        五段式多普勒表
+                    </h3>
+                    <span id="stepBadge" class="text-xs text-slate-500 uppercase font-mono bg-slate-800 px-2 py-1 rounded">Step: 5kHz</span>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-800/80">
+                                <th class="px-6 py-3">阶段 / Phase</th>
+                                <th class="px-6 py-3">
+                                    <div class="flex items-center gap-1">
+                                        Rx (下行听) <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3">
+                                    <div class="flex items-center gap-1">
+                                        Tx (上行发) <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="dopplerBody" class="divide-y divide-slate-700">
+                            <!-- 表格行将通过 JS 插入这里 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="bg-slate-900/30 px-6 py-3 text-xs text-slate-500 border-t border-slate-700 flex justify-between">
+                    <span>* FM 模式自动修正 UHF (±10kHz max)</span>
+                    <span>TCA = 最高点 (Time of Closest Approach)</span>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- JavaScript 逻辑 -->
+    <script>
+        // --- 默认数据 (作为 fetch 失败的备用) ---
+        const DEFAULT_SATELLITES = [
+            { id: "demo-fm", name: "Demo FM (Default)", type: "FM", uplink: 435.000, downlink: 145.000, tone: 67.0, notes: "无法读取 sat.json，正在显示默认数据。" }
+        ];
+
+        // --- 应用状态 ---
+        const appState = {
+            satellites: [],
+            selectedSatId: null,
+            linearOffset: 0
+        };
+
+        // --- 初始化 ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+            
+            // 绑定文件上传事件
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+        });
+
+        async function initApp() {
+            try {
+                const response = await fetch('./sat.json');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                loadSatellites(data);
+            } catch (e) {
+                console.warn("无法自动加载 sat.json (可能是直接打开了 HTML 文件)", e);
+                showStatus("无法自动读取 sat.json。如果是本地直接打开文件，请使用右上角的“手动加载”按钮，或使用 Web 服务器运行。", true);
+                loadSatellites(DEFAULT_SATELLITES);
+            }
+        }
+
+        function showStatus(msg, isError = false) {
+            const el = document.getElementById('statusMsg');
+            el.textContent = msg;
+            el.className = `block px-4 py-3 rounded-lg text-sm border mb-4 ${isError ? 'bg-red-500/20 text-red-200 border-red-500/30' : 'bg-green-500/20 text-green-200 border-green-500/30'}`;
+            el.classList.remove('hidden');
+        }
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const json = JSON.parse(event.target.result);
+                    if (Array.isArray(json)) {
+                        loadSatellites(json);
+                        showStatus("JSON 文件加载成功！");
+                    } else {
+                        alert("JSON 格式错误：必须是数组格式");
+                    }
+                } catch (err) {
+                    alert("JSON 解析失败");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function loadSatellites(data) {
+            appState.satellites = data;
+            if (data.length > 0 && !appState.selectedSatId) {
+                appState.selectedSatId = data[0].id;
+            } else if (data.length > 0) {
+                // 如果当前选中的ID在新列表中不存在，重置为第一个
+                const exists = data.find(s => s.id === appState.selectedSatId);
+                if (!exists) appState.selectedSatId = data[0].id;
+            }
+            render();
+        }
+
+        function selectSatellite(id) {
+            appState.selectedSatId = id;
+            appState.linearOffset = 0; // 切换卫星时重置微调
+            render();
+        }
+
+        function updateLinearOffset(val) {
+            appState.linearOffset = parseFloat(val);
+            renderDopplerTable(); // 仅更新表格和滑块数值显示
+            document.getElementById('offsetValue').textContent = (appState.linearOffset > 0 ? '+' : '') + appState.linearOffset;
+        }
+
+        // --- 渲染逻辑 ---
+
+        function render() {
+            renderSatGrid();
+            renderSatDetails();
+            renderDopplerTable();
+        }
+
+        function renderSatGrid() {
+            const container = document.getElementById('satGrid');
+            container.innerHTML = '';
+
+            appState.satellites.forEach(sat => {
+                const isActive = sat.id === appState.selectedSatId;
+                const btn = document.createElement('button');
+                btn.className = `p-3 rounded-lg text-left transition border ${
+                    isActive 
+                    ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/50' 
+                    : 'bg-slate-800 border-slate-700 hover:bg-slate-750 hover:border-slate-600'
+                }`;
+                
+                // Icon based on type
+                const icon = sat.type === 'FM' 
+                    ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline mr-1"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>` 
+                    : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline mr-1"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
+
+                btn.innerHTML = `
+                    <div class="font-bold text-sm truncate">${sat.name}</div>
+                    <div class="text-xs opacity-70 flex items-center mt-1">
+                        ${icon} ${sat.type}
+                    </div>
+                `;
+                btn.onclick = () => selectSatellite(sat.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function renderSatDetails() {
+            const container = document.getElementById('satDetails');
+            const sat = appState.satellites.find(s => s.id === appState.selectedSatId);
+            if (!sat) return;
+
+            const isFM = sat.type === 'FM';
+            const typeBadgeColor = isFM ? 'bg-emerald-500/20 text-emerald-400' : 'bg-purple-500/20 text-purple-400';
+
+            let extraInfo = '';
+            
+            // FM 特有显示
+            if (sat.tone) {
+                extraInfo += `
+                <div class="flex justify-between border-b border-slate-700 pb-2 mb-2">
+                    <span class="text-slate-400">亚音 (Tone)</span>
+                    <span class="font-mono font-bold text-yellow-400">${sat.tone.toFixed(1)} Hz</span>
+                </div>`;
+            }
+
+            // Linear 特有显示 (模式 + 滑块)
+            if (!isFM) {
+                // 默认模式显示
+                const upMode = sat.uplinkMode || "USB"; 
+                const downMode = sat.downlinkMode || "LSB";
+                
+                extraInfo += `
+                <div class="grid grid-cols-2 gap-2 mb-4 border-b border-slate-700 pb-4">
+                    <div class="bg-slate-700/50 p-2 rounded text-center">
+                        <div class="text-[10px] text-slate-400 uppercase">Tx Mode</div>
+                        <div class="font-bold text-blue-300">${upMode}</div>
+                    </div>
+                    <div class="bg-slate-700/50 p-2 rounded text-center">
+                        <div class="text-[10px] text-slate-400 uppercase">Rx Mode</div>
+                        <div class="font-bold text-emerald-300">${downMode}</div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-2">
+                    <label class="block text-xs font-semibold text-slate-400 mb-2">
+                        频段偏移微调 (kHz)
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input 
+                            type="range" min="-10" max="10" step="0.5"
+                            value="${appState.linearOffset}"
+                            oninput="updateLinearOffset(this.value)"
+                            class="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span id="offsetValue" class="font-mono text-white w-12 text-right">
+                            ${(appState.linearOffset > 0 ? '+' : '') + appState.linearOffset}
+                        </span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">用于在通带内移动中心频率</p>
+                </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="flex items-start justify-between mb-4 fade-in">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white leading-tight">${sat.name}</h2>
+                        <span class="inline-block mt-2 px-2 py-0.5 rounded text-xs font-bold ${typeBadgeColor}">
+                            ${sat.type} Mode
+                        </span>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M13.2 2.6a1 1 0 0 1 1-1.2l6-1a1 1 0 0 1 1.2 1l-1 6a1 1 0 0 1-1.2 1l-6-1a1 1 0 0 1-1-1.2Z"/><circle cx="12" cy="12" r="10"/><path d="m19 5-7 7"/></svg>
+                </div>
+                <div class="space-y-2 text-sm fade-in">
+                    ${extraInfo}
+                    <div class="p-3 bg-slate-700/50 rounded text-slate-300 italic text-xs leading-relaxed mt-4">
+                        ${sat.notes || "暂无备注信息"}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderDopplerTable() {
+            const sat = appState.satellites.find(s => s.id === appState.selectedSatId);
+            if (!sat) return;
+
+            const isFM = sat.type === 'FM';
+            document.getElementById('stepBadge').textContent = isFM ? 'Step: 5kHz' : 'Continuous';
+
+            const tbody = document.getElementById('dopplerBody');
+            tbody.innerHTML = '';
+
+            let baseUp, baseDown;
+            if (isFM) {
+                baseUp = sat.uplink;
+                baseDown = sat.downlink;
+            } else {
+                baseUp = sat.uplinkBase + (appState.linearOffset / 1000);
+                if (sat.isInverting) {
+                    baseDown = sat.downlinkBase - (appState.linearOffset / 1000);
+                } else {
+                    baseDown = sat.downlinkBase + (appState.linearOffset / 1000);
+                }
+            }
+
+            const isUpUHF = baseUp > 300;
+            const isDownUHF = baseDown > 300;
+            const maxShiftUp = isUpUHF ? 10 : 3;
+            const maxShiftDown = isDownUHF ? 10 : 3;
+
+            const phases = [
+                { name: "AOS (入)", label: "Acquisition", progress: 0, color: "text-emerald-400" },
+                { name: "Approach", label: "Approaching", progress: 0.25, color: "text-emerald-200" },
+                { name: "TCA (顶)", label: "Closest", progress: 0.5, color: "text-white font-bold bg-slate-700" },
+                { name: "Depart", label: "Departing", progress: 0.75, color: "text-orange-200" },
+                { name: "LOS (出)", label: "Loss Sig", progress: 1.0, color: "text-orange-400" },
+            ];
+
+            phases.forEach((phase, idx) => {
+                const factor = 1 - (phase.progress * 2);
+                let upFreqStr, downFreqStr;
+
+                if (isFM) {
+                    let upShift = 0;
+                    let downShift = 0;
+                    // FM 简易逻辑：仅对 UHF 进行 5kHz 修正
+                    if (isUpUHF) upShift = -1 * factor * maxShiftUp;
+                    if (isDownUHF) downShift = factor * maxShiftDown;
+
+                    const roundTo5k = (f, shiftKhz) => {
+                        let shifted = f + (shiftKhz / 1000);
+                        let khz = Math.round(shifted * 1000);
+                        let remainder = khz % 5;
+                        if (remainder < 3) khz -= remainder; else khz += (5 - remainder);
+                        return (khz / 1000).toFixed(3);
+                    };
+
+                    upFreqStr = isUpUHF ? roundTo5k(baseUp, upShift) : baseUp.toFixed(3);
+                    downFreqStr = isDownUHF ? roundTo5k(baseDown, downShift) : baseDown.toFixed(3);
+                } else {
+                    // Linear 精确计算
+                    const upShift = -1 * factor * maxShiftUp;
+                    const downShift = factor * maxShiftDown;
+                    upFreqStr = (baseUp + upShift/1000).toFixed(4);
+                    downFreqStr = (baseDown + downShift/1000).toFixed(4);
+                }
+
+                // Create Row
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-slate-700/50 transition-colors ${phase.color.includes('bg-') ? phase.color : ''}`;
+                
+                // Color parsing for text only
+                const textColorClass = phase.color.replace('bg-slate-700', '').trim();
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-bold ${textColorClass}">${phase.name}</div>
+                        <div class="text-[10px] text-slate-500">${phase.label}</div>
+                    </td>
+                    <td class="px-6 py-4 font-mono text-xl text-emerald-300">
+                        ${downFreqStr}
+                    </td>
+                    <td class="px-6 py-4 font-mono text-xl text-blue-300">
+                        ${upFreqStr}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+    </script>
+</body>
+</html>
